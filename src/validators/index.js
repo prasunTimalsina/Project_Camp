@@ -1,6 +1,10 @@
 import { body } from "express-validator";
+import { AvailableUserRoles } from "../utils/constants.js";
 
 const userRegisterValidator = () => {
+  /* console.log(body("email"));
+  console.log(body("username"));
+  console.log(body("password")); */
   return [
     body("email")
       .trim()
@@ -22,6 +26,10 @@ const userRegisterValidator = () => {
       .trim()
       .notEmpty()
       .withMessage("Full name is required"),
+    body("role")
+      .optional()
+      .isIn(AvailableUserRoles)
+      .withMessage("Invalid user role"),
   ];
 };
 
@@ -83,7 +91,7 @@ const notesValidator = () => {
   return [body("content").notEmpty().withMessage("Content is required")];
 };
 
-export {
+/* export {
   addMemberToProjectValidator,
   createProjectValidator,
   createTaskValidator,
@@ -94,4 +102,6 @@ export {
   userLoginValidator,
   userRegisterValidator,
   userResetForgottenPasswordValidator,
-};
+}; */
+
+export { userRegisterValidator };

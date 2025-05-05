@@ -1,9 +1,9 @@
 import { validationResult } from "express-validator";
-import { ApiError } from "../utils/api-error";
+import { ApiError } from "../utils/api-error.js";
 
 export const validate = (req, res, next) => {
   const error = validationResult(req);
-
+  console.log(validationResult(req));
   if (error.isEmpty()) {
     return next();
   }
