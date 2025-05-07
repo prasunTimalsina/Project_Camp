@@ -109,4 +109,5 @@ export {
   userLoginValidator,
   userResetForgottenPasswordValidator,
   userChangeCurrentPasswordValidator,
+  createProjectValidator,
 };
