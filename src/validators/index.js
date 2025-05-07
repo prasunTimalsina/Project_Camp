@@ -104,4 +104,9 @@ const notesValidator = () => {
   userResetForgottenPasswordValidator,
 }; */
 
-export { userRegisterValidator, userLoginValidator };
+export {
+  userRegisterValidator,
+  userLoginValidator,
+  userResetForgottenPasswordValidator,
+  userChangeCurrentPasswordValidator,
+};

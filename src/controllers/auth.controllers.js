@@ -226,7 +226,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
     subject: "Password reset request",
     mailgenContent: forgotPasswordMailgenContent(
       user.username,
-      `http://localhost:8000/api/v1/reset-password/${unHashedToken}`
+      `http://localhost:8000/api/v1/users/reset-password/${unHashedToken}`
     ),
   });
 
@@ -245,7 +245,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
   const { resetToken } = req.params;
   const { newPassword } = req.body;
 
-  if (!password) {
+  if (!newPassword) {
     throw new ApiError(400, "Password is required");
   }
 
@@ -254,7 +254,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
     .update(resetToken)
     .digest("hex");
 
-  const user = await findOne({
+  const user = await User.findOne({
     forgotPasswordToken: hashedToken,
     forgotPasswordExpiry: { $gt: Date.now() },
   });
@@ -269,7 +269,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
   //TODO:See if the password is hashed or not after setting { validateBeforeSave: false }
   await user.save({ validateBeforeSave: false });
 
-  res.statu(200).json(new ApiResponse(200, {}, "Password reset sucessfully"));
+  res.status(200).json(new ApiResponse(200, {}, "Password reset sucessfully"));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -286,7 +286,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       process.env.REFRESH_TOKEN_SECRET
     );
 
-    const user = await user.findById(decodedToken?._id);
+    const user = await User.findById(decodedToken?._id);
 
     if (!user) {
       throw new ApiError(401, "Invalid refresh token");
@@ -329,7 +329,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user?._id);
 
   // check the old password
-  const isPasswordValid = await user.isPasswordCorrect(oldPassword);
+  const isPasswordValid = user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordValid) {
     throw new ApiError(400, "Invalid old password");
