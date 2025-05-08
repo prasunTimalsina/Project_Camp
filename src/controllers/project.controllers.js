@@ -12,7 +12,6 @@ const getProjects = async (req, res) => {
 };
 
 const getProjectById = asyncHandler(async (req, res) => {
-  // get project by id
   const projectId = req?.params.id;
   if (!projectId) {
     throw new ApiError(400, "Project id is required");
@@ -37,7 +36,7 @@ const createProject = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newProject, "New project created"));
 });
 
-const updateProject = async (req, res) => {
+const updateProject = asyncHandler(async (req, res) => {
   const newTour = await Project.findByIdAndUpdate(req?.params.id, req.body, {
     new: true,
     runValidators: true,
@@ -48,7 +47,7 @@ const updateProject = async (req, res) => {
   res
     .status(200)
     .json(new ApiResponse(204, newTour, "Data updated sucessfully"));
-};
+});
 
 const deleteProject = asyncHandler(async (req, res) => {
   const project = await Project.findByIdAndDelete(req?.params.id);
