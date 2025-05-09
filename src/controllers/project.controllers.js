@@ -4,15 +4,17 @@ import { ProjectMember } from "../models/projectmember.models.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import { User } from "../models/user.models.js";
-const getProjects = async (req, res) => {
+import mongoose, { mongo } from "mongoose";
+import { AvailableUserRoles, UserRolesEnum } from "../utils/constants.js";
+const getProjects = asyncHandler(async (req, res) => {
   const projects = await Project.find();
   res
     .status(200)
     .json(new ApiResponse(200, projects, "Projects fetch sucessfully"));
-};
+});
 
 const getProjectById = asyncHandler(async (req, res) => {
-  const projectId = req?.params.id;
+  const { projectId } = req.params;
   if (!projectId) {
     throw new ApiError(400, "Project id is required");
   }
@@ -30,6 +32,19 @@ const createProject = asyncHandler(async (req, res) => {
   const createdBy = req?.user._id;
 
   const newProject = await Project.create({ name, description, createdBy });
+  if (!newProject) {
+    throw new ApiError(400, "Error creating project");
+  }
+
+  const projectMember = await ProjectMember.create({
+    user: new mongoose.Types.ObjectId(createdBy),
+    project: new mongoose.Types.ObjectId(newProject._id),
+    role: UserRolesEnum.ADMIN,
+  });
+
+  if (!projectMember) {
+    throw new ApiError(400, "Error assinging you as project admin");
+  }
 
   return res
     .status(200)
@@ -37,20 +52,37 @@ const createProject = asyncHandler(async (req, res) => {
 });
 
 const updateProject = asyncHandler(async (req, res) => {
-  const newTour = await Project.findByIdAndUpdate(req?.params.id, req.body, {
+  const { projectId } = req.params;
+
+  if (!projectId) {
+    throw new ApiError(400, "Required Project Id");
+  }
+
+  const newProject = await Project.findByIdAndUpdate(projectId, req.body, {
     new: true,
     runValidators: true,
   });
-  if (!newTour) {
+
+  if (!newProject) {
     throw new ApiError(400, "Invalid project id or Invalid data");
   }
   res
     .status(200)
-    .json(new ApiResponse(204, newTour, "Data updated sucessfully"));
+    .json(new ApiResponse(204, newProject, "Data updated sucessfully"));
 });
 
 const deleteProject = asyncHandler(async (req, res) => {
-  const project = await Project.findByIdAndDelete(req?.params.id);
+  const { projectId } = req.params;
+
+  if (!projectId) {
+    throw new ApiError(400, "Project Id required");
+  }
+
+  const deletedProject = await Project.findByIdAndDelete(projectId);
+
+  if (!deletedProject) {
+    throw new ApiError(400, "Unable to delete the project");
+  }
 
   res
     .status(200)
@@ -59,13 +91,13 @@ const deleteProject = asyncHandler(async (req, res) => {
 
 const getProjectMembers = async (req, res) => {
   // get project members
-  const projectId = req?.params.id;
+  const { projectId } = req.params;
   if (!projectId) {
     throw new ApiError(400, "Project id is required");
   }
   const projectMembers = await ProjectMember.find({ project: projectId });
   if (!projectMembers) {
-    throw new ApiError(400, "Invalid id");
+    throw new ApiError(404, "Members not found");
   }
 
   res
@@ -75,16 +107,22 @@ const getProjectMembers = async (req, res) => {
 
 const addMemberToProject = async (req, res) => {
   // add member to project
-  const { email, role, projectId } = req.body;
+  const { projectId } = req.params;
 
-  const user = await User.findOne({ email });
+  //will be validate with validator middlerware
+  const { email, role } = req.body;
+
+  const user = await User.findOne({ email }).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+
   if (!user) {
     throw new ApiError(404, "User not found");
   }
   const projectMember = await ProjectMember.create({
-    user: user._id,
+    user: new mongoose.Types.ObjectId(user._id),
     role,
-    project: projectId,
+    project: new mongoose.Types.ObjectId(projectId),
   });
 
   res
@@ -92,9 +130,14 @@ const addMemberToProject = async (req, res) => {
     .json(new ApiResponse(201, projectMember, "Added user to project"));
 };
 
-//memeber id: 681b179d1b7201a689722e55
 const deleteMember = async (req, res) => {
-  const member = await ProjectMember.findByIdAndDelete(req?.params.id);
+  const { memberId } = req.params;
+
+  if (!memberId) {
+    throw new ApiError(404, "Member id required");
+  }
+
+  const member = await ProjectMember.findByIdAndDelete(memberId);
 
   if (!member) {
     throw new ApiError(400, "Invalid member id");
@@ -106,16 +149,30 @@ const deleteMember = async (req, res) => {
 };
 
 const updateMemberRole = async (req, res) => {
-  const memberId = req.params.id;
+  const { memberId } = req.params;
   const { role } = req.body;
 
+  if (!memberId) {
+    throw new ApiError(400, "Member id required");
+  }
+
+  if (!AvailableUserRoles.includes(role)) {
+    {
+      throw new ApiError(400, "Invalid user role");
+    }
+  }
+
   const updatedMember = await ProjectMember.findByIdAndUpdate(
-    memberId,
+    new mongoose.Types.ObjectId(memberId),
     {
       role,
     },
     { runValidators: true, new: true }
   );
+
+  if (!updatedMember) {
+    throw new ApiError(400, "Failed to update user role");
+  }
 
   res
     .status(200)

@@ -31,31 +31,33 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
   }
 });
 
-export const validateProjectPermission = asyncHandler(async () => {
-  const { projectId } = req.params;
+export const validateProjectPermission = (roles = []) => {
+  return asyncHandler(async (req, res, next) => {
+    const { projectId } = req.params;
 
-  if (!projectId) {
-    throw new ApiError(400, "Invalid project id");
-  }
+    if (!projectId) {
+      throw new ApiError(400, "Invalid project id");
+    }
 
-  const projectMember = await ProjectMember.findOne({
-    project: mongoose.Types.ObjectId(projectId),
-    user: req.user?._id,
+    const projectMember = await ProjectMember.findOne({
+      project: new mongoose.Types.ObjectId(projectId),
+      user: new mongoose.Types.ObjectId(req.user?._id),
+    });
+
+    if (!projectMember) {
+      throw new ApiError(403, "You are not part of this project");
+    }
+
+    const givenRole = projectMember?.role;
+
+    if (!roles.includes(givenRole)) {
+      throw new ApiError(
+        403,
+        "You don't have permission to perform the given action"
+      );
+    }
+
+    req.user.role = givenRole;
+    next();
   });
-
-  if (!projectMember) {
-    throw new ApiError(400, "You are not part of this project");
-  }
-
-  const givenRole = projectMember?.role;
-
-  if (!roles.includes(givenRole)) {
-    throw new ApiError(
-      400,
-      "You don't have permission to perform the given action"
-    );
-  }
-
-  req.user.role = givenRole;
-  next();
-});
+};
