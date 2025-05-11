@@ -61,3 +61,5 @@ export const validateProjectPermission = (roles = []) => {
     next();
   });
 };
+
+//TODO: Validate note permission if needed

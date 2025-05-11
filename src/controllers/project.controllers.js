@@ -8,6 +8,7 @@ import mongoose, { mongo } from "mongoose";
 import { AvailableUserRoles, UserRolesEnum } from "../utils/constants.js";
 const getProjects = asyncHandler(async (req, res) => {
   const projects = await Project.find();
+
   res
     .status(200)
     .json(new ApiResponse(200, projects, "Projects fetch sucessfully"));
