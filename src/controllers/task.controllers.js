@@ -4,7 +4,7 @@ import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
-
+import fs from "fs/promises";
 // get all tasks
 const getTasks = async (req, res) => {
   // get all tasks
@@ -51,9 +51,29 @@ const updateTask = async (req, res) => {
 };
 
 // delete task
-const deleteTask = async (req, res) => {
-  // delete task
-};
+const deleteTask = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
+
+  //find task
+  let task = await Task.findById(taskId);
+
+  //delete attachment realated to task
+  const attachments = task.attachments;
+  if (attachments.length > 0) {
+    for (const attachment of attachments) {
+      try {
+        await fs.access(attachment.path);
+        await fs.unlink(attachment.path);
+      } catch (err) {
+        console.error(`Failed to delete file: ${attachment.path}`, err);
+      }
+    }
+  }
+  // now delete the task from db
+  task = await Task.findByIdAndDelete(taskId, { new: true });
+
+  res.status(200).json(new ApiResponse(204, null, "Task deleted sucessfully"));
+});
 
 // create subtask
 const createSubTask = async (req, res) => {
