@@ -33,7 +33,7 @@ const taskSchema = new Schema(
     attachments: {
       type: [
         {
-          url: String,
+          path: String,
           mimetype: String,
           size: Number,
         },
@@ -41,7 +41,7 @@ const taskSchema = new Schema(
       default: [],
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 export const Task = mongoose.model("Task", taskSchema);

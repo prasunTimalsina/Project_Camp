@@ -1,3 +1,10 @@
+import { ProjectMember } from "../models/projectmember.models.js";
+import { Task } from "../models/task.models.js";
+import { User } from "../models/user.models.js";
+import { ApiError } from "../utils/api-error.js";
+import { ApiResponse } from "../utils/api-response.js";
+import { asyncHandler } from "../utils/async-handler.js";
+
 // get all tasks
 const getTasks = async (req, res) => {
   // get all tasks
@@ -9,9 +16,34 @@ const getTaskById = async (req, res) => {
 };
 
 // create task
-const createTask = async (req, res) => {
-  // create task
-};
+const createTask = asyncHandler(async (req, res) => {
+  const { projectId: project } = req.params;
+  const { title, description } = JSON.parse(req.body.data);
+  let { assignedTo } = JSON.parse(req.body.data);
+
+  const attachments = [req.file];
+  const assignedBy = req?.user._id;
+  assignedTo = await User.findOne({ email: assignedTo });
+  assignedTo = await ProjectMember({
+    user: assignedTo._id,
+    project,
+  });
+
+  if (!assignedTo) {
+    throw new ApiError(400, "Assigned member is not part of this project");
+  }
+  //TODO: Check if it throw error if the user doesn't provide attachments
+  const task = await Task.create({
+    title,
+    description,
+    project,
+    assignedTo,
+    assignedBy,
+    attachments,
+  });
+
+  res.status(200).json(new ApiResponse(201, task, "Task created sucessfully"));
+});
 
 // update task
 const updateTask = async (req, res) => {

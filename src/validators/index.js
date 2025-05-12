@@ -1,5 +1,8 @@
 import { body } from "express-validator";
-import { AvailableUserRoles } from "../utils/constants.js";
+import {
+  AvailableTaskStatuses,
+  AvailableUserRoles,
+} from "../utils/constants.js";
 
 const userRegisterValidator = () => {
   /* console.log(body("email"));
@@ -75,6 +78,17 @@ const addMemberToProjectValidator = () => {
   ];
 };
 
+const createTaskValidator = () => {
+  return [
+    body("title").notEmpty().withMessage("Title is required"),
+    body("assignedTo").notEmpty().withMessage("assignedTo is required"),
+    body("status")
+      .optional()
+      .isIn(AvailableTaskStatuses)
+      .withMessage("Status is invalid"),
+  ];
+};
+
 const updateTaskValidator = () => {
   return [
     body("title").optional(),
@@ -83,7 +97,9 @@ const updateTaskValidator = () => {
       .optional()
       .isIn(AvailableTaskStatuses)
       .withMessage("Status is invalid"),
-    body("assignedTo").optional(),
+    body("assignedTo")
+      .isEmail()
+      .withMessage("Provide the email of assigned member"),
   ];
 };
 
@@ -111,4 +127,5 @@ export {
   userChangeCurrentPasswordValidator,
   createProjectValidator,
   notesValidator,
+  createTaskValidator,
 };
