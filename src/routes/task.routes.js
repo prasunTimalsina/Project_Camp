@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { createTask, deleteTask } from "../controllers/task.controllers.js";
+import {
+  createTask,
+  deleteTask,
+  updateTask,
+} from "../controllers/task.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import {
   validateProjectPermission,
@@ -29,5 +33,14 @@ router
       UserRolesEnum.PROJECT_ADMIN,
     ]),
     deleteTask
+  )
+  .put(
+    verifyJWT,
+    validateProjectPermission([
+      UserRolesEnum.ADMIN,
+      UserRolesEnum.PROJECT_ADMIN,
+    ]),
+    upload.single("some_file"),
+    updateTask
   );
 export default router;
