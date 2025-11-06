@@ -48,7 +48,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken -emailVerificationTokne -emailVerificationExpiry"
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
   if (!createdUser) {
@@ -265,6 +265,7 @@ const resetForgottenPassword = asyncHandler(async (req, res) => {
 
   user.forgotPasswordExpiry = undefined;
   user.forgotPasswordToken = undefined;
+
   user.password = newPassword;
   //TODO:See if the password is hashed or not after setting { validateBeforeSave: false }
   await user.save({ validateBeforeSave: false });
